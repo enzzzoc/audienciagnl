@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Asistencia</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Vinculamos el archivo CSS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script> <!-- SheetJS Library -->
+</head>
+<body>
+
+<h1>Formulario de Asistencia</h1>
+
+<form id="formularioAsistencia">
+    <div>
+        <label for="nombre">Nombre</label>
+        <input type="text" id="nombre" name="nombre" required>
+    </div>
+    <div>
+        <label for="apellido">Apellido</label>
+        <input type="text" id="apellido" name="apellido" required>
+    </div>
+    <div>
+        <label for="dni">DNI</label>
+        <input type="text" id="dni" name="dni" required>
+    </div>
+    <div>
+        <label for="estado">Estado</label>
+        <select id="estado" name="estado">
+            <option value="Presente">Presente</option>
+            <option value="Ausente">Ausente</option>
+        </select>
+    </div>
+    <button type="button" onclick="agregarOActualizar()">Agregar</button>
+</form>
+
+<!-- Botón para Exportar a Excel -->
+<button class="btn-export" onclick="exportarExcel()">Exportar a Excel</button>
+
+<table>
+    <thead>
+        <tr>
+            <th>Apellido</th>
+            <th>Nombre</th>
+            <th>DNI</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="tablaAsistencia">
+        <!-- Filas dinámicas se agregarán aquí -->
+    </tbody>
+</table>
+
+<script>
+    let filaEditando = null; // Variable para rastrear la fila en edición
+
+    function agregarOActualizar() {
+        const nombre = document.getElementById('nombre').value.trim();
+        const apellido = document.getElementById('apellido').value.trim();
+        const dni = document.getElementById('dni').value.trim();
+        const estado = document.getElementById('estado').value;
+
+        if (!nombre || !apellido || !dni) {
+            alert('Por favor, complete todos los campos.');
+            return;
+        }
+
+        if (filaEditando) {
+            // Actualizar fila existente
+            filaEditando.cells[0].textContent = apellido;
+            filaEditando.cells[1].textContent = nombre;
+            filaEditando.cells[2].textContent = dni;
+            filaEditando.cells[3].textContent = estado;
+
+            filaEditando = null; // Resetear la fila en edición
+        } else {
+            // Crear una nueva fila
+            const tabla = document.getElementById('tablaAsistencia');
+            const fila = document.createElement('tr');
+            fila.innerHTML = `
+                <td>${apellido}</td>
+                <td>${nombre}</td>
+                <td>${dni}</td>
+                <td>${estado}</td>
+                <td>
+                    <button class="btn btn-edit" onclick="editarFila(this)">Editar</button>
+                    <button class="btn btn-delete" onclick="borrarFila(this)">Borrar</button>
+                </td>
+            `;
+            tabla.appendChild(fila);
+        }
+
+        // Limpiar el formulario
+        document.getElementById('formularioAsistencia').reset();
+    }
+
+    function editarFila(boton) {
+        filaEditando = boton.parentElement.parentElement; // Obtener la fila correspondiente
+        document.getElementById('nombre').value = filaEditando.cells[1].textContent;
+        document.getElementById('apellido').value = filaEditando.cells[0].textContent;
+        document.getElementById('dni').value = filaEditando.cells[2].textContent;
+        document.getElementById('estado').value = filaEditando.cells[3].textContent;
+    }
+
+    function borrarFila(boton) {
+        const fila = boton.parentElement.parentElement; // Obtener la fila correspondiente
+        fila.remove(); // Eliminar la fila de la tabla
+    }
+
+    // Función para exportar la tabla a un archivo Excel
+    function exportarExcel() {
+        const tabla = document.getElementById('tablaAsistencia');
+        // Filtrar las columnas para solo tomar las deseadas: Apellido, Nombre, DNI, Estado
+        const filas = Array.from(tabla.rows).map(fila => [
+            fila.cells[0].textContent, // Apellido
+            fila.cells[1].textContent, // Nombre
+            fila.cells[2].textContent, // DNI
+            fila.cells[3].textContent  // Estado
+        ]);
+
+        // Crear un nuevo libro de trabajo solo con las columnas necesarias
+        const ws = XLSX.utils.aoa_to_sheet([
+            ['Apellido', 'Nombre', 'DNI', 'Estado'], // Cabecera
+            ...filas // Datos
+        ]);
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Asistencia');
+        XLSX.writeFile(wb, 'asistencia.xlsx'); // Descargar el archivo Excel
+    }
+</script>
+
+</body>
+</html>
