@@ -85,3 +85,4 @@ document.getElementById('descargarExcel').addEventListener('click', function () 
 
     XLSX.writeFile(libro, 'asistencia.xlsx');
 });
+
